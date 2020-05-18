@@ -18,7 +18,7 @@ import getValidationErrors from '../../utils/getValidationErrors';
 import Input from '../../components/Input';
 import Button from '../../components/Button';
 import { Container, Title, BackToSignIn, BackToSignInText } from './styles';
-
+import api from '../../services/api';
 import logoImg from '../../assets/logo.png';
 
 interface SignUpFormData {
@@ -32,44 +32,50 @@ const SignUp: React.FC = () => {
 
   const formRef = useRef<FormHandles>(null);
 
-  const handleSignUp = useCallback(async (data: SignUpFormData) => {
-    formRef.current?.setErrors({});
-    try {
-      const schema = Yup.object().shape({
-        name: Yup.string().required('Nome obrigatório'),
-        email: Yup.string()
-          .required('E-mail obrigatório')
-          .email('Digite um e-mail válido'),
-        password: Yup.string().min(6, 'No mínimo 6 digitos'),
-      });
+  const handleSignUp = useCallback(
+    async (data: SignUpFormData) => {
+      try {
+        formRef.current?.setErrors({});
 
-      await schema.validate(data, {
-        abortEarly: false,
-      });
+        const schema = Yup.object().shape({
+          name: Yup.string().required('Nome obrigatório'),
+          email: Yup.string()
+            .required('E-mail obrigatório')
+            .email('Digite um e-mail válido'),
+          password: Yup.string().min(6, 'No mínimo 6 digitos'),
+        });
 
-      // await api.post('/users', data);
+        await schema.validate(data, {
+          abortEarly: false,
+        });
 
-      // history.push('/');
+        console.log(data);
+        await api.post('/users', data);
 
-      // addToast({
-      //   type: 'success',
-      //   title: 'Cadastro realizado!',
-      //   description: 'Você já pode fazer seu logon no GoBarber',
-      // });
-    } catch (err) {
-      if (err instanceof Yup.ValidationError) {
-        const errors = getValidationErrors(err);
-        formRef.current?.setErrors(errors);
+        navigation.goBack();
 
-        return;
+        Alert.alert(
+          'Cadastro concluído com sucesso',
+          'Você já pode fazer login na aplicação.',
+        );
+      } catch (err) {
+        if (err instanceof Yup.ValidationError) {
+          const errors = getValidationErrors(err);
+          formRef.current?.setErrors(errors);
+
+          return;
+        }
+
+        console.log(err.message);
+
+        Alert.alert(
+          'Erro no cadastro',
+          'Ocorreu um erro ao fazer o cadastro, tenta novamente mais tarde.',
+        );
       }
-
-      Alert.alert(
-        'Erro no cadastro',
-        'Ocorreu um erro ao fazer o cadastro, tenta novamente mais tarde.',
-      );
-    }
-  }, []);
+    },
+    [navigation],
+  );
 
   const emailInputRef = useRef<TextInput>(null);
   const passwordInputRef = useRef<TextInput>(null);
@@ -108,7 +114,7 @@ const SignUp: React.FC = () => {
                 keyboardType="email-address"
                 autoCorrect={false}
                 autoCapitalize="none"
-                name="name"
+                name="email"
                 icon="mail"
                 placeholder="E-mail"
                 returnKeyType="next"
